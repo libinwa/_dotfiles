@@ -73,7 +73,6 @@
     set nojoinspaces                " Prevents inserting two spaces after punctuation on a join (J)
     set nowrap                      " Do not wrap long lines
     set number                      " Line numbers on
-    set pastetoggle=<F12>           " pastetoggle (sane indentation on pastes)
     "set path+=**                    " 检索file_in_path时递归查找子目录, 递归就会拖慢
     set relativenumber              " Line relative numbers on
     set spell                       " Spell checking on
@@ -95,13 +94,15 @@
     set foldmethod=indent           " indent 折叠方式 `set foldmethod=marker` " marker 折叠方式
     " 常规模式下用空格键来开关光标行所在折叠（注：zR 展开所有折叠，zM 关闭所有折叠）
     nnoremap <space> @=((foldclosed(line('.')) < 0) ? 'zc' : 'zo')<CR>
-
     if has('clipboard')
-      if has('unnamedplus')  " When possible use + register for copy-paste
-        set clipboard=unnamed,unnamedplus
-      else         " On mac and Windows, use * register for copy-paste
-        set clipboard=unnamed
+      set clipboard=unnamed
+      if has('unnamedplus') || has('nvim')  " When possible use + register for copy-paste
+        set clipboard+=unnamedplus
       endif
+    endif
+    " pastetoggle (sane indentation on pastes)
+    if exists('&pastetoggle')
+      set pastetoggle=<F12>
     endif
 
     " 非可见字符不显示, `set list`可按预定字符(listchars指定)替代显示非可见字符
@@ -384,22 +385,26 @@
     " }
 
     " Wrapper of the CLIs job control {
-        silent function! JobCallback(jid, cwd, cb, event, channel, data)
+        silent function! JobCallback(jid, cwd, cb, event, channel, data, streamname='')
           if !empty(a:cb) && type(a:cb) ==? type(function("tr"))
             call a:cb(a:jid, a:cwd, a:event, a:channel, a:data)
           else
+            let l:job = a:channel | if exists('*ch_getjob') | let l:job = ch_getjob(a:channel) | endif
             let l:buf = bufnr(a:jid.'$') | let l:wid = bufwinid(l:buf)
             if l:wid ==? -1
               silent execute 'lcd '.a:cwd | silent execute 'new '.a:jid | syntax clear
               setlocal modifiable bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu
-              let l:buf = bufnr() | let l:wid = bufwinid(l:buf) | let b:job = ch_getjob(a:channel) | let b:ss = 0   " Hold job and scrolling switch
-              nnoremap <silent><buffer><leader>k :call job_stop(b:job, 'kill')<CR>
+              let l:buf = bufnr() | let l:wid = bufwinid(l:buf) | let b:ss = 0   " Hold job and scrolling switch
               nnoremap <silent><buffer><leader>ss :let b:ss = (b:ss != 0)? 0 : 1<CR>
+              if exists('*job_stop') | nnoremap <silent><buffer><leader>k :call job_stop(b:job, 'kill')<CR> | endif
+              if exists('*jobstop') | nnoremap <silent><buffer><leader>k :call jobstop(b:job)<CR> | endif
             endif
-            call setbufvar(l:buf, 'job', ch_getjob(a:channel))
             if !empty(a:data) | call setbufvar(l:buf, '&modifiable', 1) | call setbufline(l:buf, line('$')+1, a:data) | endif
-            call setbufvar(l:buf, '&modified', 0) | call setbufvar(l:buf, '&modifiable', 0)
+            call setbufvar(l:buf, 'job', l:job) | call setbufvar(l:buf, '&modified', 0) | call setbufvar(l:buf, '&modifiable', 0)
             if getbufvar(l:buf, 'ss') != 0 | call win_gotoid(l:wid) | call cursor('$', 0) | endif
+            if a:event ==? 'exit'
+              let l:stl_title = getbufvar(l:buf, 'stl_title') | call setbufvar(l:buf, 'stl_title', '*'.l:stl_title)
+            endif
           endif
         endfunction
 
@@ -409,20 +414,30 @@
           let cwd = trim(fnamemodify(expand(a:cwd), ':p'))
           let cmd = printf('%s %s "%s"', &shell, &shellcmdflag, trim(a:cmd))
           if exists('*job_start') && exists('*job_status')
-            let job = job_start(cmd,
-                  \{ 'out_cb' : function('JobCallback', [jid, cwd, a:callback, 'stdout']),
-                  \  'err_cb' : function('JobCallback', [jid, cwd, a:callback, 'stderr']),
-                  \  'exit_cb': function('JobCallback', [jid, cwd, a:callback, 'exit']),
-                  \  'mode': 'nl',
-                  \  'cwd': cwd })
+            let job = job_start(cmd, { 'out_cb':  function('JobCallback', [jid, cwd, a:callback, 'stdout']),
+                  \                    'err_cb':  function('JobCallback', [jid, cwd, a:callback, 'stderr']),
+                  \                    'exit_cb': function('JobCallback', [jid, cwd, a:callback, 'exit']),
+                  \                    'mode': 'nl',
+                  \                    'cwd': cwd })
             if job_status(job) !=? 'run'
               echohl ErrorMsg | echomsg 'Starting:' cmd 'failed, jobinfo:' job_info(job) | echohl NONE
             else
               echomsg 'Starting:' cmd 'succeeded, jobinfo:' job
               call JobCallback(jid, cwd, a:callback, 'init', job_getchannel(job), '')
             endif
+          elseif exists('*jobstart')
+            let job = jobstart(a:cmd, { 'on_stdout': function('JobCallback', [jid, cwd, a:callback, 'stdout']),
+                  \                     'on_stderr': function('JobCallback', [jid, cwd, a:callback, 'stderr']),
+                  \                     'on_exit':   function('JobCallback', [jid, cwd, a:callback, 'exit']),
+                  \                     'cwd': cwd })
+            if job <= 0
+              echohl ErrorMsg | echomsg 'Starting:' cmd 'failed, errorcode:' job | echohl NONE
+            else
+              echomsg 'Starting:' cmd 'succeeded.'
+              call JobCallback(jid, cwd, a:callback, 'init', job, '')
+            endif
           else
-              echohl ErrorMsg | echomsg 'Starting job failed, please check version:' v:version | echohl NONE
+              echohl ErrorMsg | echomsg 'Job API not available, VIM:' v:progpath | echohl NONE
           endif
         endfunction
         command! -nargs=+ -complete=file_in_path Start call JobStart(<q-args>, <q-args>)
@@ -431,11 +446,17 @@
         silent function! SetQfList(qfopts, jid, cwd, event, channel, data)
           if a:event ==? 'init'
             copen | silent exec 'lcd '.a:cwd | call setqflist([], 'r', {'title': a:jid, 'lines':[]}->extend(a:qfopts))
-            nnoremap <silent><buffer><leader>k <Cmd>call job_stop(b:job, 'kill')<CR>
+            if exists('*job_stop') | nnoremap <silent><buffer><leader>k :call job_stop(b:job, 'kill')<CR> | endif
+            if exists('*jobstop') | nnoremap <silent><buffer><leader>k :call jobstop(b:job)<CR> | endif
           else
-            call setqflist([], 'a', {'title': a:jid, 'lines': [a:data]}->extend(a:qfopts))
+            let lines = a:data | if type(a:data) != type([]) | let lines = [a:data] | endif
+            call setqflist([], 'a', {'title': a:jid, 'lines': lines}->extend(a:qfopts))
           endif
-          call setbufvar(getqflist({'qfbufnr':0}).qfbufnr, 'job', ch_getjob(a:channel))
+          let l:job = a:channel | if exists('*ch_getjob') | let l:job = ch_getjob(a:channel) | endif
+          let l:qfbufnr = getqflist({'qfbufnr':0}).qfbufnr | call setbufvar(l:qfbufnr, 'job', l:job)
+          if a:event ==? 'exit'
+            let l:stl_title = getbufvar(l:qfbufnr, 'stl_title') | call setbufvar(l:qfbufnr, 'stl_title', '*'.l:stl_title)
+          endif
         endfunction
         command! -nargs=+ -complete=file_in_path Quick call JobStart(<q-args>, <q-args>, getcwd(), function('SetQfList', [{}]))
     " }
@@ -457,7 +478,6 @@
     nnoremap <leader>p <Cmd>bprevious<CR>
     nnoremap <leader>n <Cmd>bnext<CR>
     nnoremap <leader>o <Cmd>b#<CR>
-    nnoremap <leader>` <Cmd>terminal ++curwin<CR>
     nnoremap <leader>e <Cmd>edit <cfile><CR>
     nnoremap <leader>g <Cmd>Grep <cexpr> .<CR>
     nnoremap <leader>f <Cmd>Find <cexpr><CR>
@@ -468,7 +488,11 @@
     nnoremap <Tab><Tab> <Cmd>tab split<CR>
     nnoremap <Tab>n <Cmd>tabnext<CR>
     nnoremap <Tab>p <Cmd>tabprevious<CR>
-    if exists('&termwinkey') | set termwinkey=<C-L> | tnoremap <C-L>p <Cmd>tabprevious<CR> | endif
+    if !has('nvim') && has('terminal')
+      nnoremap <leader>` <Cmd>terminal ++curwin<CR> | set termwinkey=<C-L> | tnoremap <C-L>p <Cmd>tabprevious<CR>
+    else
+      nnoremap <leader>` <Cmd>terminal<CR><Cmd>startinsert<CR> | tnoremap <C-L> <C-\> | tnoremap <C-L>N <C-\><C-N>
+    endif
     " Insert current time at the cursor position
     inoremap <silent> <C-D> <C-R>=strftime('%Y-%m-%d %H:%M:%S')<CR>
     inoremap <Tab>l <C-X><C-L>|inoremap <Tab>n <C-X><C-N>|inoremap <Tab>p <C-X><C-P>|inoremap <Tab>k <C-X><C-K>
@@ -490,16 +514,16 @@
     nnoremap <space><enter> ""yy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>""P<CR>:exec '%!'.&shell<CR>
     vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP<CR>:exec 'lcd '.ProjectDir()<CR>:exec '%!'.&shell<CR>
     command! -range Puml exec 'normal! gv"vy' | bo new | setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu| exec 'normal! "vP' |
-          \ exec '%!java -jar '.MyVimrcDir().'/tools.libs.scripts/tools/plantuml.jar -v -tsvg -pipe > #<-diagram.svg'
-    if &spell == 1 | let &spf = MyVimrcDir().'/tools.libs.scripts/scripts/spell.'.&encoding.'.add' | nnoremap <leader>vz :exec 'vsplit' &spf<CR> | endif
-    nnoremap <leader>vs :exec 'vsplit' MyVimrcDir().'/tools.libs.scripts/scripts/snippets.md'<CR> " 选中沉淀，Run或<space><enter>
+          \ exec '%!java -jar '.MyVimrcDir().'/../tools.libs.scripts/tools/plantuml.jar -v -tsvg -pipe > #<-diagram.svg'
+    if &spell == 1 | let &spf = MyVimrcDir().'/../tools.libs.scripts/scripts/spell.'.&encoding.'.add' | nnoremap <leader>vz :exec 'vsplit' &spf<CR> | endif
+    nnoremap <leader>vs :exec 'vsplit' MyVimrcDir().'/../tools.libs.scripts/snippets.md'<CR> " 选中沉淀，Run或<space><enter>
     " Review comments in the project directory
     nnoremap <leader>vc :execute 'vsplit' ProjectDir().'/review.md'<CR>
     nnoremap <leader>lc :let @*=expand('%:p').' :'.line('.').':'.col('.')<CR>:echo '-=Cursor Postion Copied=-'<CR>
     nnoremap <leader>ll :let dbk =getcwd()<CR>:silent! exec 'lcd' ProjectDir()<CR>
           \ :let @*=expand('%:p:.').' ('.line('.').')'<CR>:silent! exec 'lcd' dbk<CR>:echo '-=Relative Postion Copied=-'<CR>
-    command! -range=% -nargs=0 Gitlog exec 'Start git log -L'.<line1>.','.<line2>.':'.expand('%')
-    command! -range=% -nargs=0 Gitblame exec 'Start git blame -L'.<line1>.','.<line2>.' -- '.expand('%')
+    command! -range=% -nargs=0 Gitlog exec 'Start git --no-pager log -L '.<line1>.','.<line2>.':'.expand('%').' '.<q-args>
+    command! -range=% -nargs=0 Gitblame exec 'Start git --no-pager blame -L '.<line1>.','.<line2>.' -- '.expand('%').' '.<q-args>
     command! -nargs=* -complete=dir Grep exec 'Quick rg --vimgrep --no-heading --follow  --smart-case ' <q-args>
     command! -nargs=* -complete=dir Grepa exec 'Quick rg -uuu --vimgrep --no-heading --follow --smart-case ' <q-args>
     function! FindFiles(cmd, outputCb, cmdopt_pattern='', cmdopt_path='', ...)
@@ -536,6 +560,9 @@
             \| if exists('w:quickfix_title') | let b:stl_title=w:quickfix_title | endif
       if exists('#TerminalOpen')
         autocmd TerminalOpen * setl nolist nowrap nospell nu nornu
+      endif
+      if exists('#TermOpen')
+        autocmd TermOpen * setl nolist nowrap nospell nonu nornu
       endif
       if has('statusline')
         autocmd BufWinEnter,OptionSet * if !buflisted(bufnr('%'))

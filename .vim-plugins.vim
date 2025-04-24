@@ -72,14 +72,14 @@ if filereadable(ProjectDir().'/.vimrc.local')
   exec 'source '.ProjectDir().'/.vimrc.local'
 endif
 
-let $PATH = MyVimrcDir()."/tools.libs.scripts/scripts".";".$PATH    " Got env of my scripts
+let $PATH = MyVimrcDir()."/../tools.libs.scripts/scripts".";".$PATH    " Got env of my scripts
 if isdirectory("C:/Program Files/Git/usr/bin") | let $PATH = "C:/Program Files/Git/usr/bin".";".$PATH | endif       " for various tool at git home.
 if isdirectory("C:\\Program Files (x86)\\Sun xVM VirtualBox") | let $PATH = "C:\\Program Files (x86)\\Sun xVM VirtualBox".";".$PATH | endif
 let $PATH = $HOME.'\\libin\\ProgramFiles\\llvm\\clang+llvm-20.1.1-x86_64-pc-windows-msvc\\bin;'.$PATH
 if exists('&pythonthreehome') | let &pythonthreehome=expand("$HOME/.conda/envs/py38") | let $PATH = &pythonthreehome.";".&pythonthreehome."/Scripts;".$PATH | endif
 " http_proxy and https_proxy pointing to px (http://127.0.0.1:3128)
-let $HTTP_PROXY="http://127.0.0.1:3128"
-let $HTTPS_PROXY="http://127.0.0.1:3128"
+"let $HTTP_PROXY="http://127.0.0.1:3128"
+"let $HTTPS_PROXY="http://127.0.0.1:3128"
 
 "
 " colo, transparent
