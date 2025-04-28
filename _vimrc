@@ -57,7 +57,6 @@
     set autoindent                  " Indent at the same level of the previous line
     set autoread                    " 当文件在外部被修改，自动更新该文件
     set backspace=indent,eol,start  " Backspace for dummies
-    "set comments=sl:/*,mb:*,elx:*/  " auto format comment blocks
     set expandtab                   " Tabs are spaces, not tabs
     set hidden                      " Allow buffer switching without saving
     set history=1000                " Store a ton of history (default is 20)
@@ -67,7 +66,7 @@
     set iskeyword-=#                " '#' is an end of word designator
     set iskeyword-=-                " '-' is an end of word designator
     set iskeyword-=.                " '.' is an end of word designator
-    "set matchpairs+=<:>             " Match, to be used with %
+    set matchpairs+=<:>             " Match, to be used with %
     set mouse=a                     " Enable mouse usage
     set mousehide                   " Hide the mouse cursor while typing
     set nojoinspaces                " Prevents inserting two spaces after punctuation on a join (J)
@@ -100,8 +99,7 @@
         set clipboard+=unnamedplus
       endif
     endif
-    " pastetoggle (sane indentation on pastes)
-    if exists('&pastetoggle')
+    if exists('&pastetoggle')       " pastetoggle (sane indentation on pastes)
       set pastetoggle=<F12>
     endif
 
@@ -524,14 +522,16 @@
           \ :let @*=expand('%:p:.').' ('.line('.').')'<CR>:silent! exec 'lcd' dbk<CR>:echo '-=Relative Postion Copied=-'<CR>
     command! -range=% -nargs=0 Gitlog exec 'Start git --no-pager log -L '.<line1>.','.<line2>.':'.expand('%').' '.<q-args>
     command! -range=% -nargs=0 Gitblame exec 'Start git --no-pager blame -L '.<line1>.','.<line2>.' -- '.expand('%').' '.<q-args>
-    command! -nargs=* -complete=dir Grep exec 'Quick rg --vimgrep --no-heading --follow  --smart-case ' <q-args>
-    command! -nargs=* -complete=dir Grepa exec 'Quick rg -uuu --vimgrep --no-heading --follow --smart-case ' <q-args>
+    command! -nargs=* -complete=dir Rg exec 'Start rg --vimgrep --no-heading --follow  --smart-case ' <q-args>
+    command! -nargs=* -complete=dir Rga exec 'Start rg -uuu --vimgrep --no-heading --follow --smart-case ' <q-args>
+    command! -bang -nargs=* -complete=dir Grep exec 'Quick rg '.(<bang>0?'':'--max-depth=4').' --vimgrep --no-heading --follow  --smart-case ' <q-args>
     function! FindFiles(cmd, outputCb, cmdopt_pattern='', cmdopt_path='', ...)
-      let cli = a:cmd.' '.a:cmdopt_path.(a:cmdopt_pattern!=''? ' | rg --no-heading --smart-case '.a:cmdopt_pattern : '').' '.join(a:000, ' ')
-      call JobStart(cli, cli, getcwd(), a:outputCb)
+      let cli = a:cmd.' '.join(a:000, ' ').' '.a:cmdopt_path.(a:cmdopt_pattern!=''? ' | rg --no-heading --smart-case '.a:cmdopt_pattern : '')
+      return JobStart(cli, cli, getcwd(), a:outputCb)
     endfunction
-    command! -nargs=* -complete=dir Find call FindFiles('rg --files --sort path', function('SetQfList', [{'efm':'%f'}]), <f-args>)
-    command! -nargs=* -complete=dir Finda call FindFiles('rg --files --no-ignore --hidden --sort path', {}, <f-args>)
+    command! -nargs=* -complete=dir Fd call FindFiles('rg --files --sort path', {}, <f-args>)
+    command! -nargs=* -complete=dir Fda call FindFiles('rg --files --no-ignore --hidden --sort path', {}, <f-args>)
+    command! -bang -nargs=* -complete=dir Find call FindFiles('rg --files '.(<bang>0?'':'--max-depth=4').' --sort path', function('SetQfList', [{'efm':'%f'}]), <f-args>)
 
     " Define autocommands of this vimrc
     augroup VimRcAUs
