@@ -74,7 +74,7 @@
     set number                      " Line numbers on
     "set path+=**                    " 检索file_in_path时递归查找子目录, 递归就会拖慢
     set relativenumber              " Line relative numbers on
-    set spell                       " Spell checking on
+    "set spell                       " Spell checking on
     set shiftwidth=2                " Use indents of 2 spaces
     set showmatch                   " Show matching brackets/parenthesis
     set smartcase                   " Case sensitive when uc present
@@ -513,15 +513,15 @@
     vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP<CR>:exec 'lcd '.ProjectDir()<CR>:exec '%!'.&shell<CR>
     command! -range Puml exec 'normal! gv"vy' | bo new | setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu| exec 'normal! "vP' |
           \ exec '%!java -jar '.MyVimrcDir().'/../tools.libs.scripts/tools/plantuml.jar -v -tsvg -pipe > #<-diagram.svg'
-    if &spell == 1 | let &spf = MyVimrcDir().'/../tools.libs.scripts/scripts/spell.'.&encoding.'.add' | nnoremap <leader>vz :exec 'vsplit' &spf<CR> | endif
+    let &spf = MyVimrcDir().'/../tools.libs.scripts/scripts/spell.'.&encoding.'.add' | nnoremap <leader>vz :exec 'vsplit' &spf<CR>
     nnoremap <leader>vs :exec 'vsplit' MyVimrcDir().'/../tools.libs.scripts/snippets.md'<CR> " 选中沉淀，Run或<space><enter>
     " Review comments in the project directory
     nnoremap <leader>vc :execute 'vsplit' ProjectDir().'/review.md'<CR>
     nnoremap <leader>lc :let @*=expand('%:p').' :'.line('.').':'.col('.')<CR>:echo '-=Cursor Postion Copied=-'<CR>
     nnoremap <leader>ll :let dbk =getcwd()<CR>:silent! exec 'lcd' ProjectDir()<CR>
           \ :let @*=expand('%:p:.').' ('.line('.').')'<CR>:silent! exec 'lcd' dbk<CR>:echo '-=Relative Postion Copied=-'<CR>
-    command! -range=% -nargs=0 Gitlog exec 'Start git --no-pager log -L '.<line1>.','.<line2>.':'.expand('%').' '.<q-args>
-    command! -range=% -nargs=0 Gitblame exec 'Start git --no-pager blame -L '.<line1>.','.<line2>.' -- '.expand('%').' '.<q-args>
+    command! -range=% -nargs=* Gitlog exec 'Start git --no-pager log -L '.<line1>.','.<line2>.':'.expand('%').' '.<q-args>
+    command! -range=% -nargs=* Gitblame exec 'Start git --no-pager blame -L '.<line1>.','.<line2>.' -- '.expand('%').' '.<q-args>
     command! -nargs=* -complete=dir Rg exec 'Start rg --vimgrep --no-heading --follow  --smart-case ' <q-args>
     command! -nargs=* -complete=dir Rga exec 'Start rg -uuu --vimgrep --no-heading --follow --smart-case ' <q-args>
     command! -bang -nargs=* -complete=dir Grep exec 'Quick rg '.(<bang>0?'':'--max-depth=4').' --vimgrep --no-heading --follow  --smart-case ' <q-args>
