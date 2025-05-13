@@ -441,19 +441,24 @@
         command! -nargs=+ -complete=file_in_path Start call JobStart(<q-args>, <q-args>)
 
         " Use QuickFix instead of shell output window
-        silent function! SetQfList(qfopts, jid, cwd, event, channel, data)
+        silent function! SetQfList(qfopts, jid, cwd, event, channel, data) 
+          let l:qfbufnr = getqflist({'qfbufnr':0}).qfbufnr | let l:job = getbufvar(l:qfbufnr, 'job')
           if a:event ==? 'init'
-            copen | silent exec 'lcd '.a:cwd | call setqflist([], 'r', {'title': a:jid, 'lines':[]}->extend(a:qfopts))
-            if exists('*job_stop') | nnoremap <silent><buffer><leader>k :call job_stop(b:job, 'kill')<CR> | endif
-            if exists('*jobstop') | nnoremap <silent><buffer><leader>k :call jobstop(b:job)<CR> | endif
+            if type(l:job) ==? type({}) && has_key(l:job, a:jid)
+              cclose | copen | silent exec 'lcd '.a:cwd | call setqflist([], 'u', {'id': l:job[a:jid].id, 'title': a:jid}->extend(a:qfopts))
+              silent exec getqflist({'id': l:job[a:jid].id, 'nr':0}).nr.'chistory'
+            else
+              copen | silent exec 'lcd '.a:cwd | call setqflist([], ' ', {'nr':'$', 'title': a:jid, 'lines':[]}->extend(a:qfopts))
+              if exists('*job_stop') | nnoremap <silent><buffer><leader>k :call job_stop(ch_getjob(b:job[getqflist({'id':0}).id].chn), 'kill')<CR> | endif
+              if exists('*jobstop') | nnoremap <silent><buffer><leader>k :call jobstop(b:job[getqflist({'id':0}).id].chn)<CR> | endif
+            endif
+            let l:qflstid = getqflist({'id':0}).id | let l:m = {l:qflstid : {'chn': a:channel}, a:jid : {'id': l:qflstid}}
+            call setbufvar(getqflist({'qfbufnr':0}).qfbufnr, 'job', (type(l:job) != type({})? l:m : extend(l:job, l:m)))
+          elseif a:event ==? 'exit'
+            cclose | call setqflist([], 'u', {'id': l:job[a:jid].id, 'title': '*'.a:jid}) | copen
           else
             let lines = a:data | if type(a:data) != type([]) | let lines = [a:data] | endif
-            call setqflist([], 'a', {'title': a:jid, 'lines': lines}->extend(a:qfopts))
-          endif
-          let l:job = a:channel | if exists('*ch_getjob') | let l:job = ch_getjob(a:channel) | endif
-          let l:qfbufnr = getqflist({'qfbufnr':0}).qfbufnr | call setbufvar(l:qfbufnr, 'job', l:job)
-          if a:event ==? 'exit'
-            let l:stl_title = getbufvar(l:qfbufnr, 'stl_title') | call setbufvar(l:qfbufnr, 'stl_title', '*'.l:stl_title)
+            call setqflist([], 'a', {'id': l:job[a:jid].id, 'lines': lines}->extend(a:qfopts))
           endif
         endfunction
         command! -nargs=+ -complete=file_in_path Quick call JobStart(<q-args>, <q-args>, getcwd(), function('SetQfList', [{}]))
@@ -557,6 +562,7 @@
             \| nnoremap <buffer> <leader>u :cgetbuffer<CR>:cclose<CR>:copen<CR>
             \| nnoremap <buffer> <leader>r :cdo s/// \| update<C-Left><C-Left><Left><Left><Left>
             \| nnoremap <buffer> <leader>q <Cmd>call setqflist([], 'f')<CR><Cmd>bdelete<CR>
+            \| nnoremap <buffer><silent><leader>n <Cmd>cnewer<CR> | nnoremap <buffer><silent><leader>p <Cmd>colder<CR>
             \| if exists('w:quickfix_title') | let b:stl_title=w:quickfix_title | endif
       if exists('#TerminalOpen')
         autocmd TerminalOpen * setl nolist nowrap nospell nu nornu
