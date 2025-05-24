@@ -287,7 +287,8 @@
           if host != 'NA' && destination != ''
             if executable('rsync')
               let cmd = printf('rsync -zahcvv --stats '.tmpfmt, destination)
-              let fltconfig = findfile('rsync_filter.txt', '**/*')  " Downward search
+              let fltconfig = executeable('rg')? get(glob('`rg --files | rg rsync_filter.txt`', 0, 1), 0, '') 
+                    \: findfile('rsync_filter.txt', '**/*')  " Downward search
               if fltconfig != '' | let cmd = cmd.' --filter="merge '.fltconfig.'"' | endif
               call JobStart('SyncFiles[rsync]'.destination, cmd)
             elseif executable('scp')
@@ -454,11 +455,15 @@
             endif
             let l:qflstid = getqflist({'id':0}).id | let l:m = {l:qflstid : {'chn': a:channel}, a:jid : {'id': l:qflstid}}
             call setbufvar(getqflist({'qfbufnr':0}).qfbufnr, 'job', (type(l:job) != type({})? l:m : extend(l:job, l:m)))
-          elseif a:event ==? 'exit'
-            cclose | call setqflist([], 'u', {'id': l:job[a:jid].id, 'title': '*'.a:jid}) | copen
           else
-            let lines = a:data | if type(a:data) != type([]) | let lines = [a:data] | endif
-            call setqflist([], 'a', {'id': l:job[a:jid].id, 'lines': lines}->extend(a:qfopts))
+            if type(l:job) ==? type({}) && has_key(l:job, a:jid)
+              if a:event ==? 'exit'
+                cclose | call setqflist([], 'u', {'id': l:job[a:jid].id, 'title': '*'.a:jid}) | copen
+              else
+                let lines = a:data | if type(a:data) != type([]) | let lines = [a:data] | endif
+                call setqflist([], 'a', {'id': l:job[a:jid].id, 'lines': lines}->extend(a:qfopts))
+              endif
+            endif
           endif
         endfunction
         command! -nargs=+ -complete=file_in_path Quick call JobStart(<q-args>, <q-args>, getcwd(), function('SetQfList', [{}]))
@@ -482,8 +487,10 @@
     nnoremap <leader>n <Cmd>bnext<CR>
     nnoremap <leader>o <Cmd>b#<CR>
     nnoremap <leader>e <Cmd>edit <cfile><CR>
-    nnoremap <leader>g <Cmd>Grep <cexpr> .<CR>
-    nnoremap <leader>f <Cmd>Find <cexpr><CR>
+    nnoremap <leader>g <Cmd>Grep! <cexpr> .<CR>
+    nnoremap <leader>f <Cmd>Find! <cexpr><CR>
+    nnoremap <leader>G :Grep!<space><space>
+    nnoremap <leader>F :Find!<space><space>
     nnoremap <leader>W :!start<space><space>
     nnoremap <leader>S :Start<space><space>
     nnoremap <leader>Q :Quick<space><space>
@@ -530,13 +537,14 @@
     command! -nargs=* -complete=dir Rg exec 'Start rg --vimgrep --no-heading --follow  --smart-case ' <q-args>
     command! -nargs=* -complete=dir Rga exec 'Start rg -uuu --vimgrep --no-heading --follow --smart-case ' <q-args>
     command! -bang -nargs=* -complete=dir Grep exec 'Quick rg '.(<bang>0?'':'--max-depth=4').' --vimgrep --no-heading --follow  --smart-case ' <q-args>
-    function! FindFiles(cmd, outputCb, cmdopt_pattern='', cmdopt_path='', ...)
-      let cli = a:cmd.' '.join(a:000, ' ').' '.a:cmdopt_path.(a:cmdopt_pattern!=''? ' | rg --no-heading --smart-case '.a:cmdopt_pattern : '')
-      return JobStart(cli, cli, getcwd(), a:outputCb)
+    function! RgFilesCmd(cmdopt_rgfiles, cmdopt_pattern='', cmdopt_path='', ...)
+      let rgpattern = a:cmdopt_pattern!=''? ' | rg --no-heading --smart-case '.a:cmdopt_pattern : ''
+      return 'rg --files '.a:cmdopt_rgfiles.' '.join(a:000, ' ').' '.a:cmdopt_path.' '.rgpattern
     endfunction
-    command! -nargs=* -complete=dir Fd call FindFiles('rg --files --sort path', {}, <f-args>)
-    command! -nargs=* -complete=dir Fda call FindFiles('rg --files --no-ignore --hidden --sort path', {}, <f-args>)
-    command! -bang -nargs=* -complete=dir Find call FindFiles('rg --files '.(<bang>0?'':'--max-depth=4').' --sort path', function('SetQfList', [{'efm':'%f'}]), <f-args>)
+    command! -nargs=* -complete=dir Fd exec 'Start '.RgFilesCmd('--sort path', <f-args>)
+    command! -nargs=* -complete=dir Fda exec 'Start '.RgFilesCmd('--no-ignore --hidden --sort path', <f-args>)
+    command! -bang -nargs=* -complete=dir Find let cli = RgFilesCmd((<bang>0?'':'--max-depth=4').' --sort path', <f-args>)
+          \| call JobStart(cli, cli, getcwd(), function('SetQfList', [{'efm':'%f'}]))
 
     " Define autocommands of this vimrc
     augroup VimRcAUs
