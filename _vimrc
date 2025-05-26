@@ -287,7 +287,7 @@
           if host != 'NA' && destination != ''
             if executable('rsync')
               let cmd = printf('rsync -zahcvv --stats '.tmpfmt, destination)
-              let fltconfig = executeable('rg')? get(glob('`rg --files | rg rsync_filter.txt`', 0, 1), 0, '') 
+              let fltconfig = executable('rg')? get(glob('`rg --files | rg rsync_filter.txt`', 0, 1), 0, '')
                     \: findfile('rsync_filter.txt', '**/*')  " Downward search
               if fltconfig != '' | let cmd = cmd.' --filter="merge '.fltconfig.'"' | endif
               call JobStart('SyncFiles[rsync]'.destination, cmd)
