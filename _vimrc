@@ -545,6 +545,7 @@
     command! -nargs=* -complete=dir Fda exec 'Start '.RgFilesCmd('--no-ignore --hidden --sort path', <f-args>)
     command! -bang -nargs=* -complete=dir Find let cli = RgFilesCmd((<bang>0?'':'--max-depth=4').' --sort path', <f-args>)
           \| call JobStart(cli, cli, getcwd(), function('SetQfList', [{'efm':'%f'}]))
+    command! -range -nargs=+ Fmt <line1>,<line2>s/\%V\w\+/\=printf(<q-args>, submatch(0))/g | noh
 
     " Define autocommands of this vimrc
     augroup VimRcAUs
