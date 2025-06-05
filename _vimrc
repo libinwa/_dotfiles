@@ -206,7 +206,7 @@
       " Broken down into includeable segments
       set statusline=%<%#WildMenu#\ %{&paste?'PASTE':CurrentMode()}\ %*
       set statusline+=%<%#Pmenu#%{GitBranch()!=#''?'\ '.GitBranch().'\ \|':''}%*
-      set statusline+=%<%#Pmenu#\ %f\ \|\ %{exists('b:stl_title')?b:stl_title.'\ ':''}%w%m%r[b%n/%{BuffersListed()}]\ %*
+      set statusline+=%<%#Pmenu#\ %t\ \|\ %{exists('b:stl_title')?b:stl_title.'\ ':''}%w%m%r[b%n/%{BuffersListed()}]\ %*
       set statusline+=%<%#SignColumn#\ %{ReadableSize(wordcount().bytes)}\ %*
       set statusline+=%<%#SignColumn#\ %=    " Right side
       set statusline+=%<%#SignColumn#\ %{FencStr()},%{&ff}/%{&ft!=#''?&ft:'no\ ft'}\ %*
@@ -442,11 +442,11 @@
         command! -nargs=+ -complete=file_in_path Start call JobStart(<q-args>, <q-args>)
 
         " Use QuickFix instead of shell output window
-        silent function! SetQfList(qfopts, jid, cwd, event, channel, data) 
+        silent function! SetQfList(qfopts, jid, cwd, event, channel, data)
           let l:qfbufnr = getqflist({'qfbufnr':0}).qfbufnr | let l:job = getbufvar(l:qfbufnr, 'job')
           if a:event ==? 'init'
             if type(l:job) ==? type({}) && has_key(l:job, a:jid)
-              cclose | copen | silent exec 'lcd '.a:cwd | call setqflist([], 'u', {'id': l:job[a:jid].id, 'title': a:jid}->extend(a:qfopts))
+              cclose | copen | silent exec 'lcd '.a:cwd | call setqflist([], 'a', {'id': l:job[a:jid].id, 'title': a:jid}->extend(a:qfopts))
               silent exec getqflist({'id': l:job[a:jid].id, 'nr':0}).nr.'chistory'
             else
               copen | silent exec 'lcd '.a:cwd | call setqflist([], ' ', {'nr':'$', 'title': a:jid, 'lines':[]}->extend(a:qfopts))
@@ -458,7 +458,7 @@
           else
             if type(l:job) ==? type({}) && has_key(l:job, a:jid)
               if a:event ==? 'exit'
-                cclose | call setqflist([], 'u', {'id': l:job[a:jid].id, 'title': '*'.a:jid}) | copen
+                cclose | call setqflist([], 'a', {'id': l:job[a:jid].id, 'title': '*'.a:jid}) | copen
               else
                 let lines = a:data | if type(a:data) != type([]) | let lines = [a:data] | endif
                 call setqflist([], 'a', {'id': l:job[a:jid].id, 'lines': lines}->extend(a:qfopts))
@@ -518,6 +518,7 @@
     " After recording a macro with w, typing "w<leader>mm can create stmt to get this macro.
     " In future, you can get this macro by executing this stmt, and execute macro with @w
     nnoremap <leader>mm :<C-U><C-R><C-R>='let @'. v:register .' = '. string(getreg(v:register))<CR><C-F><LEFT>
+    nnoremap <leader>cd <Cmd>lcd %:p:h<CR><Cmd>pwd<CR> | nnoremap <leader>ed <Cmd>echo expand('%:p:h')<CR>
     " Run the selected vimscript lines
     command! -range Run let lines = getline(<line1>,<line2>) | call execute(lines,'') | echo len(lines).' lines executed.'
     " Run the CLI at the current line or CLIs in the selected lines with shell
@@ -552,8 +553,6 @@
       autocmd!
       " Seek project directory when vim entered.
       autocmd VimEnter * if &buftype !=? 'terminal' && bufname("") !~ "^\[A-Za-z0-9\]*://" | call ProjectDir() | endif
-      " Sets cwd to the file directory when buffer entered.
-      autocmd BufEnter * if &buftype ==? "" && bufname("") !~ "^\[A-Za-z0-9\]*://" | try | lcd %:p:h | catch /^Vim\%((\a\+)\)\=:E/ | endtry | endif
       " Restore cursor to file position in previous editing session.
       autocmd BufWinEnter * if line("'\"") <= line("$") | silent! normal! g`" | endif
       " Toggle line width 启用每行超过某一字符总数后给予字符变化提示（字体变蓝加下划线）
