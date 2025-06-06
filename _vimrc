@@ -505,6 +505,8 @@
     endif
     " Insert current time at the cursor position
     inoremap <silent> <C-D> <C-R>=strftime('%Y-%m-%d %H:%M:%S')<CR>
+    " To insert expr result, put expr into the register first!
+    inoremap <silent> <C-E> <C-R>=eval(@")<CR>
     inoremap <Tab>l <C-X><C-L>|inoremap <Tab>n <C-X><C-N>|inoremap <Tab>p <C-X><C-P>|inoremap <Tab>k <C-X><C-K>
     inoremap <Tab>t <C-X><C-T>|inoremap <Tab>i <C-X><C-I>|inoremap <Tab>] <C-X><C-]>|inoremap <Tab>f <C-X><C-F>
     inoremap <Tab>d <C-X><C-D>|inoremap <Tab>v <C-X><C-V>|inoremap <Tab>u <C-X><C-U>|inoremap <Tab>o <C-X><C-O>
