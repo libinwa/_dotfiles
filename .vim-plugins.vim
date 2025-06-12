@@ -170,6 +170,7 @@ going through a door, that is.
 14. only: close all windows but the current window. and N<c-w>w goto N next window, try <c-w>w
 15. Copy selections of fzf.vim window to quickfix window, try: <tab> to select targets and then press <enter>
 16. In the quickfix window, Use `:cdo` to execute a command on every item in the quickfix list, `:cdo s/{pattern}/{replacement} | update` for replacing and saving.
+17. Practice: `:e %:p` then type tab key to expand it for a full path, then start your next step....
 
 
 ## Question and Answer
@@ -187,6 +188,19 @@ going through a door, that is.
         endif
     endfor
     ```
+
+2. Performance of a function calling? Easy performance testing with reltime() of vimscript
+
+    ```vimscript
+    CD
+    let start = reltime()
+        let fltconfig = glob('`rg --files | rg rsync_filter.txt`')  " with ripgrep --files
+    echomsg "Elapsed time: " reltimefloat(reltime(start)) "seconds."
+    ```
+
+
+
+
 
 
 ## Nice Plugins

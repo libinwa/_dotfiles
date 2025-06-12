@@ -163,8 +163,8 @@
 
 
 " UI Settings {
-    " dark background, allow to toggle between dark and light
-    set background=dark
+    " light background, allow to toggle between dark and light
+    set background=light
     nnoremap <silent> <leader>bg <Cmd>if &bg ==? "dark"<Bar>set bg=light<Bar>else<Bar>set bg=dark<Bar>endif<CR>
     set winminheight=0              " Windows can be 0 line high
     set splitright                  " Puts new vsplit windows to the right of the current
@@ -391,7 +391,7 @@
             let l:job = a:channel | if exists('*ch_getjob') | let l:job = ch_getjob(a:channel) | endif
             let l:buf = bufnr(a:jid.'$') | let l:wid = bufwinid(l:buf)
             if l:wid ==? -1
-              silent execute 'lcd '.a:cwd | silent execute 'new '.a:jid | syntax clear
+              silent execute 'new '.a:jid | silent execute 'lcd '.a:cwd | syntax clear
               setlocal modifiable bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu
               let l:buf = bufnr() | let l:wid = bufwinid(l:buf) | let b:ss = 0   " Hold job and scrolling switch
               nnoremap <silent><buffer><leader>ss :let b:ss = (b:ss != 0)? 0 : 1<CR>
@@ -446,10 +446,10 @@
           let l:qfbufnr = getqflist({'qfbufnr':0}).qfbufnr | let l:job = getbufvar(l:qfbufnr, 'job')
           if a:event ==? 'init'
             if type(l:job) ==? type({}) && has_key(l:job, a:jid)
-              cclose | copen | silent exec 'lcd '.a:cwd | call setqflist([], 'a', {'id': l:job[a:jid].id, 'title': a:jid}->extend(a:qfopts))
+              silent exec 'cd '.a:cwd | cclose | copen | call setqflist([], 'a', {'id': l:job[a:jid].id, 'title': a:jid}->extend(a:qfopts))
               silent exec getqflist({'id': l:job[a:jid].id, 'nr':0}).nr.'chistory'
             else
-              copen | silent exec 'lcd '.a:cwd | call setqflist([], ' ', {'nr':'$', 'title': a:jid, 'lines':[]}->extend(a:qfopts))
+              silent exec 'cd '.a:cwd | copen | call setqflist([], ' ', {'nr':'$', 'title': a:jid, 'lines':[]}->extend(a:qfopts))
               if exists('*job_stop') | nnoremap <silent><buffer><leader>k :call job_stop(ch_getjob(b:job[getqflist({'id':0}).id].chn), 'kill')<CR> | endif
               if exists('*jobstop') | nnoremap <silent><buffer><leader>k :call jobstop(b:job[getqflist({'id':0}).id].chn)<CR> | endif
             endif
@@ -520,7 +520,7 @@
     " After recording a macro with w, typing "w<leader>mm can create stmt to get this macro.
     " In future, you can get this macro by executing this stmt, and execute macro with @w
     nnoremap <leader>mm :<C-U><C-R><C-R>='let @'. v:register .' = '. string(getreg(v:register))<CR><C-F><LEFT>
-    nnoremap <leader>cd <Cmd>lcd %:p:h<CR><Cmd>pwd<CR> | nnoremap <leader>ed <Cmd>echo expand('%:p:h')<CR>
+    nnoremap <leader>cd <Cmd>cd %:p:h<CR><Cmd>pwd<CR> | nnoremap <leader>ed <Cmd>echo expand('%:p:h')<CR>
     " Run the selected vimscript lines
     command! -range Run let lines = getline(<line1>,<line2>) | call execute(lines,'') | echo len(lines).' lines executed.'
     " Run the CLI at the current line or CLIs in the selected lines with shell
@@ -548,7 +548,7 @@
     command! -nargs=* -complete=dir Fda exec 'Start '.RgFilesCmd('--no-ignore --hidden --sort path', <f-args>)
     command! -bang -nargs=* -complete=dir Find let cli = RgFilesCmd((<bang>0?'':'--max-depth=4').' --sort path', <f-args>)
           \| call JobStart(cli, cli, getcwd(), function('SetQfList', [{'efm':'%f'}]))
-    command! -range -nargs=+ Fmt <line1>,<line2>s/\%V\w\+/\=printf(<q-args>, submatch(0))/g | noh
+    command! -range -nargs=+ Fmt <line1>,<line2>s/\%V\w\+/\=printf(<q-args>, submatch(0))/g | noh       " usage: Fmt %#x  Fmt %#d ...
 
     " Define autocommands of this vimrc
     augroup VimRcAUs
