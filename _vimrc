@@ -391,7 +391,7 @@
             let l:job = a:channel | if exists('*ch_getjob') | let l:job = ch_getjob(a:channel) | endif
             let l:buf = bufnr(a:jid.'$') | let l:wid = bufwinid(l:buf)
             if l:wid ==? -1
-              silent execute 'new '.a:jid | silent execute 'lcd '.a:cwd | syntax clear
+              silent execute 'new '.a:jid | silent execute 'cd '.a:cwd | syntax clear
               setlocal modifiable bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu
               let l:buf = bufnr() | let l:wid = bufwinid(l:buf) | let b:ss = 0   " Hold job and scrolling switch
               nnoremap <silent><buffer><leader>ss :let b:ss = (b:ss != 0)? 0 : 1<CR>
@@ -525,7 +525,7 @@
     command! -range Run let lines = getline(<line1>,<line2>) | call execute(lines,'') | echo len(lines).' lines executed.'
     " Run the CLI at the current line or CLIs in the selected lines with shell
     nnoremap <space><enter> ""yy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>""P<CR>:exec '%!'.&shell<CR>
-    vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP<CR>:exec 'lcd '.ProjectDir()<CR>:exec '%!'.&shell<CR>
+    vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP<CR>:exec 'cd '.ProjectDir()<CR>:exec '%!'.&shell<CR>
     command! -range Puml exec 'normal! gv"vy' | bo new | setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu| exec 'normal! "vP' |
           \ exec '%!java -jar '.MyVimrcDir().'/../tools.libs.scripts/tools/plantuml.jar -v -tsvg -pipe > #<-diagram.svg'
     let &spf = MyVimrcDir().'/../tools.libs.scripts/scripts/spell.'.&encoding.'.add' | nnoremap <leader>vz :exec 'vsplit' &spf<CR>
