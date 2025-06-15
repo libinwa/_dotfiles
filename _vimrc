@@ -533,8 +533,8 @@
     " Review comments in the project directory
     nnoremap <leader>vc :execute 'vsplit' ProjectDir().'/review.md'<CR>
     nnoremap <leader>lc :let @*=expand('%:p').' :'.line('.').':'.col('.')<CR>:echo '-=Cursor Postion Copied=-'<CR>
-    nnoremap <leader>ll :let dbk =getcwd()<CR>:silent! exec 'lcd' ProjectDir()<CR>
-          \ :let @*=expand('%:p:.').' ('.line('.').')'<CR>:silent! exec 'lcd' dbk<CR>:echo '-=Relative Postion Copied=-'<CR>
+    nnoremap <leader>ll :let dbk =getcwd()<CR>:silent! exec 'cd' ProjectDir()<CR>
+          \ :let @*=expand('%:p:.').' ('.line('.').')'<CR>:silent! exec 'cd' dbk<CR>:echo '-=Relative Postion Copied=-'<CR>
     command! -range=% -nargs=* Gitlog exec 'Start git --no-pager log -L '.<line1>.','.<line2>.':'.expand('%').' '.<q-args>
     command! -range=% -nargs=* Gitblame exec 'Start git --no-pager blame -L '.<line1>.','.<line2>.' -- '.expand('%').' '.<q-args>
     command! -nargs=* -complete=dir Rg exec 'Start rg --vimgrep --no-heading --follow  --smart-case ' <q-args>
