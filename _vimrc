@@ -491,7 +491,6 @@
     nnoremap <leader>f <Cmd>Find! <cexpr><CR>
     nnoremap <leader>G :Grep!<space><space>
     nnoremap <leader>F :Find!<space><space>
-    nnoremap <leader>W :!start<space><space>
     nnoremap <leader>S :Start<space><space>
     nnoremap <leader>Q :Quick<space><space>
     " Open current buffer in new tab page
@@ -521,13 +520,12 @@
     " In future, you can get this macro by executing this stmt, and execute macro with @w
     nnoremap <leader>mm :<C-U><C-R><C-R>='let @'. v:register .' = '. string(getreg(v:register))<CR><C-F><LEFT>
     nnoremap <leader>cd <Cmd>cd %:p:h<CR><Cmd>pwd<CR> | nnoremap <leader>ed <Cmd>echo expand('%:p:h')<CR>
-    " Run the selected vimscript lines
+    " Run the selected vimscripts
     command! -range Run let lines = getline(<line1>,<line2>) | call execute(lines,'') | echo len(lines).' lines executed.'
-    " Run the CLI at the current line or CLIs in the selected lines with shell
-    nnoremap <space><enter> ""yy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>""P<CR>:exec '%!'.&shell<CR>
-    vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP<CR>:exec 'cd '.ProjectDir()<CR>:exec '%!'.&shell<CR>
-    command! -range Puml exec 'normal! gv"vy' | bo new | setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu| exec 'normal! "vP' |
-          \ exec '%!java -jar '.MyVimrcDir().'/../tools.libs.scripts/tools/plantuml.jar -v -tsvg -pipe > #<-diagram.svg'
+    " Run the selected CLI lines with shell
+    vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP<CR>:exec '%!'.&shell<CR>
+    " Start to run program or open a document/URL with its default program on windows
+    vnoremap <leader>W "vy:execute '!start' @v<CR> | nnoremap <leader>W :!start<space><space>
     let &spf = MyVimrcDir().'/../tools.libs.scripts/scripts/spell.'.&encoding.'.add' | nnoremap <leader>vz :exec 'vsplit' &spf<CR>
     nnoremap <leader>vs :exec 'vsplit' MyVimrcDir().'/../tools.libs.scripts/snippets.md'<CR> " 选中沉淀，Run或<space><enter>
     " Review comments in the project directory

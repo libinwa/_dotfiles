@@ -73,7 +73,7 @@ if filereadable(ProjectDir().'/.vimrc.local')
 endif
 
 let $PATH = MyVimrcDir()."/../tools.libs.scripts/scripts".":".$PATH    " Got env of my scripts
-if isdirectory("C:/Program Files/Git/usr/bin") | let $PATH = "C:/Program Files/Git/usr/bin".";".$PATH | endif       " for various tool at git home.
+"if isdirectory("C:/Program Files/Git/usr/bin") | let $PATH = "C:/Program Files/Git/usr/bin".";".$PATH | endif       " for various tool at git home.
 "if isdirectory("C:\\Program Files\\Oracle\\VirtualBox") | let $PATH = "C:\\Program Files\\Oracle\\VirtualBox".";".$PATH | endif
 "let $PATH = $HOME.'\\libin\\ProgramFiles\\llvm\\clang+llvm-20.1.1-x86_64-pc-windows-msvc\\bin;'.$PATH
 "if exists('&pythonthreehome') | let &pythonthreehome=expand("$HOME/.conda/envs/py38") | let $PATH = &pythonthreehome.";".&pythonthreehome."/Scripts;".$PATH | endif
@@ -198,6 +198,12 @@ going through a door, that is.
     echomsg "Elapsed time: " reltimefloat(reltime(start)) "seconds."
     ```
 
+3. Quickly output diagram with plantuml.jar? add custom command:
+
+    ```vimscript
+    command! -range Puml exec 'normal! gv"vy' | bo new | setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu| exec 'normal! "vP' |
+          \ exec '%!java -jar '.'/../tools.libs.scripts/tools/plantuml.jar -v -tsvg -pipe > #<-diagram.svg'
+    ```
 
 
 
@@ -278,8 +284,13 @@ How can I talk with AI via cmdline?
 
 ## Trouble shooting
 
-1. [vimscript debugging](https://stackoverflow.com/questions/12213597/how-to-see-which-plugins-are-making-vim-slow)
-  ```
+1. Which one is making vim slow?
+
+- startup slowly? Trace the log with `vim --startuptime vim-startup.log`
+
+- a specific slow action, trace with:
+
+  ```vimscript
   :profile start profile.log
   :profile func *
   :profile file *
@@ -287,6 +298,9 @@ How can I talk with AI via cmdline?
   :profile pause
   :noautocmd qall!
   ```
+> See, [vimscript debugging](https://stackoverflow.com/questions/12213597/how-to-see-which-plugins-are-making-vim-slow)
+
+
 2. a lot red block _ (underscore) in my markdown document. **Turn off
 
  highlighting *_* for the underscore in vim** Refs.:
