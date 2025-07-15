@@ -523,7 +523,7 @@
     " Run the selected vimscripts
     command! -range Run let lines = getline(<line1>,<line2>) | call execute(lines,'') | echo len(lines).' lines executed.'
     " Run the selected CLI lines with shell
-    vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP<CR>:exec '%!'.&shell<CR>
+    vnoremap <space><enter> "vy:bo new<CR>:setl bt=nofile bh=wipe nobl nolist noswf nowrap nospell nu nornu<CR>"vP:exec '%!'.&shell<CR>
     " Start to run program or open a document/URL with its default program on windows
     vnoremap <leader>W "vy:execute '!start' @v<CR> | nnoremap <leader>W :!start<space><space>
     let &spf = MyVimrcDir().'/../tools.libs.scripts/scripts/spell.'.&encoding.'.add' | nnoremap <leader>vz :exec 'vsplit' &spf<CR>

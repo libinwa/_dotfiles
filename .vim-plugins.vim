@@ -72,7 +72,7 @@ if filereadable(ProjectDir().'/.vimrc.local')
   exec 'source '.ProjectDir().'/.vimrc.local'
 endif
 
-let $PATH = MyVimrcDir()."/../tools.libs.scripts/scripts".":".$PATH    " Got env of my scripts
+"let $PATH = MyVimrcDir()."/../tools.libs.scripts/scripts".";".$PATH    " Got env of my scripts
 "if isdirectory("C:/Program Files/Git/usr/bin") | let $PATH = "C:/Program Files/Git/usr/bin".";".$PATH | endif       " for various tool at git home.
 "if isdirectory("C:\\Program Files\\Oracle\\VirtualBox") | let $PATH = "C:\\Program Files\\Oracle\\VirtualBox".";".$PATH | endif
 "let $PATH = $HOME.'\\libin\\ProgramFiles\\llvm\\clang+llvm-20.1.1-x86_64-pc-windows-msvc\\bin;'.$PATH
