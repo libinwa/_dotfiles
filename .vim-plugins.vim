@@ -9,6 +9,7 @@ Plug 'puremourning/vimspector'
 Plug 'Freed-Wu/cppinsights.vim'
 Plug 'girishji/devdocs.vim'
 Plug 'diepm/vim-rest-console'
+Plug 'tomasiser/vim-code-dark'
 call plug#end()
 " INITIALIZATION OF PLUGINs
 
@@ -276,6 +277,8 @@ How can I talk with AI via cmdline?
 
   - [vim9-ollama](https://github.com/greeschenko/vim9-ollama)
   - [vim-ai](https://github.com/madox2/vim-ai)
+
+    command -range -nargs=? Say AIChat
 
     > pip install openai
     >

@@ -578,14 +578,14 @@
       if exists('#TermOpen')
         autocmd TermOpen * setl nolist nowrap nospell nonu nornu
       endif
-      if has('statusline')
+      if has('statusline')    " set local stl else global one is as fallback (stl<)
         autocmd BufWinEnter,OptionSet * if !buflisted(bufnr('%'))
               \| setl stl=%<%#WildMenu#\ %{&paste?'PASTE':CurrentMode()}\ %*
               \| setl stl+=%<%#Pmenu#\ %t%{exists('b:stl_title')?'\ '.b:stl_title:''}\ %*
               \| setl stl+=%<%#SignColumn#\ %{ReadableSize(wordcount().bytes)}\ %*
               \| setl stl+=%<%#SignColumn#\ %=%{FencStr()},%{&ff}/%{&ft!=#''?&ft:'no\ ft'}\ %*
               \| setl stl+=%<%#Visual#\ %p%%\ %(%3l/%-2L\ %)%<%#StatusLineTermNC#\ %{winnr()}\ %*
-              \| endif
+              \| else | setl stl< | endif
       endif
       autocmd ColorScheme * hi clear CursorLineSign | hi clear SignColumn  " For a Clear Sign Column
     augroup END
