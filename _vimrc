@@ -343,7 +343,7 @@
             execute a:all? 'bwipeout!':'bwipeout' join(map(l:buffers, {_, v -> v.bufnr}))
           endif
         endfunction
-        command! -bar -bang Bw call Bwipeout(<bang>0)
+        command! -bar -bang Bw call setqflist([], 'f') | call Bwipeout(<bang>0)
     " }
 
     " For the Projects {
