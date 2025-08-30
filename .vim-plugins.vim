@@ -17,52 +17,113 @@ call plug#end()
 " Settings Plug 'yegappan/lsp'
 "
 "{
-let lspServers = []
-if executable('clangd')
-  let lspServers += [#{ name: 'clang', filetype: ['c', 'cpp'], path: 'clangd', args: ['--background-index', '--log=verbose'] }]
-endif
-if executable('rust-analyzer')
-  let lspServers += [#{ name: 'rustlang', filetype: ['rust'], path: 'rust-analyzer', args: [], syncInit: v:true }]
-endif
-if executable('lua-language-server')
-  let lspServers += [#{ name: 'lua', filetype: ['lua'], path: 'lua-language-server', args: [] }]
-endif
-if executable('pylsp')
-  let lspServers += [#{name: 'pylsp', filetype: 'python', path: 'pylsp', args: [] }]
-endif
-if executable('neocmakelsp-x86_64-pc-windows-msvc')
-  let lspServers += [#{name: 'neocmakelsp', filetype: 'cmake', path: 'neocmakelsp-x86_64-pc-windows-msvc', args: ['--stdio', '-v'] }]
-endif
-if executable('cmake-language-server')
-  let lspServers += [#{name: 'cmakelsp', filetype: 'cmake', path: 'cmake-language-server', initializationOptions: #{ buildDirectory:ProjectDir() } }]
-endif
+  let lspServers = []
+  if executable('clangd')
+    let lspServers += [#{
+          \  name: 'clang',
+          \  filetype: ['c', 'cpp'],
+          \  path: 'clangd',
+          \  args: ['--background-index', '--clang-tidy', '--header-insertion=never', '--completion-style=detailed'],
+          \  initializationOptions: #{
+          \    completion: #{
+          \      detailedLabel: v:true,     " 详细补全标签
+          \      placeholder: v:false       " 不生成占位符文本
+          \    },
+          \    diagnostics: #{
+          \      unusedIncludes: v:true     " 检查未使用的头文件
+          \    }
+          \  }
+          \}]
+  endif
+  if executable('cmake-language-server')
+    let lspServers += [#{
+          \  name: 'cmakelsp',
+          \  filetype: 'cmake',
+          \  path: 'cmake-language-server',
+          \  initializationOptions: #{
+          \    buildDirectory: ProjectDir()
+          \  }
+          \}]
+  endif
+  if executable('rust-analyzer')
+    let lspServers += [#{
+          \  name: 'rustanalyzer',
+          \  filetype: ['rust'],
+          \  path: 'rust-analyzer',
+          \  args: [],
+          \  syncInit: v:true,
+          \  initializationOptions: #{
+          \    inlayHints: #{
+          \      typeHints: #{
+          \        enable: v:true
+          \      },
+          \      parameterHints: #{
+          \        enable: v:true
+          \      }
+          \    },
+          \  }
+          \}]
+  endif
+  if executable('lua-language-server')
+    let lspServers += [#{
+          \  name: 'lua',
+          \  filetype: ['lua'],
+          \  path: 'lua-language-server',
+          \  args: []
+          \}]
+  endif
+  if executable('pylsp')
+    let lspServers += [#{
+          \  name: 'pylsp',
+          \  filetype: 'python',
+          \  path: 'pylsp',
+          \  args: [],
+          \  initializationOptions: #{
+          \    configurationSources: ['flake8'],
+          \    plugins: #{
+          \      pycodestyle: #{ enabled: v:true },
+          \      pyflakes: #{ enabled: v:true }
+          \    }
+          \  }
+          \}]
+  endif
 
-let lspOpts = #{autoHighlightDiags: v:true}
-function! OnLspAttached()
-    setlocal formatexpr=lsp#lsp#FormatExpr()
-    " To jump to the symbol definition using the vim tag-commands Ctrl-]
-    if exists('+tagfunc') | setlocal tagfunc=lsp#lsp#TagFunc | endif
-    "Switch between source and header files.
-    nmap <buffer> ,O :LspSwitchSourceHeader<CR>
-    nmap <buffer> gd :LspGotoDefinition<CR>
-    nmap <buffer> gs :LspDocumentSymbol<CR>
-    nmap <buffer> gS :LspSymbolSearch<CR>
-    nmap <buffer> gr :LspPeekReferences<CR>
-    nmap <buffer> gi :LspGotoImpl<CR>
-    "nmap <buffer> gt :LspGotoTypeDef<CR>
-    nmap <buffer> gt :LspGotoDeclaration<CR>
-    nmap <buffer> <leader>rn :LspRename<CR>
-    nmap <buffer> [g :LspDiagPrev<CR>
-    nmap <buffer> ]g :LspDiagNext<CR>
-    nmap <buffer> K  :LspHover<CR>
-endfunction
+  let lspOpts = #{
+      \ autoHighlightDiags: v:true,
+      \ diagVirtualText: v:true,
+      \ diagSigns: v:true,
+      \ diagSignText: #{Error: '✗', Warn: '⚠', Info: 'ℹ', Hint: '➤'}
+  \}
 
-augroup lsp_install
+
+  function! OnLspAttached()
+      setlocal formatexpr=lsp#lsp#FormatExpr()
+      " To jump to the symbol definition using the vim tag-commands Ctrl-]
+      if exists('+tagfunc') | setlocal tagfunc=lsp#lsp#TagFunc | endif
+      "Switch between source and header files.
+      nmap <buffer> ,O :LspSwitchSourceHeader<CR>
+      nmap <buffer> gd :LspGotoDefinition<CR>
+      nmap <buffer> gs :LspDocumentSymbol<CR>
+      nmap <buffer> gS :LspSymbolSearch<CR>
+      nmap <buffer> gr :LspPeekReferences<CR>
+      nmap <buffer> gi :LspGotoImpl<CR>
+      "nmap <buffer> gt :LspGotoTypeDef<CR>
+      nmap <buffer> gt :LspGotoDeclaration<CR>
+      nmap <buffer> <leader>rn :LspRename<CR>
+      nmap <buffer> [g :LspDiagPrev<CR>
+      nmap <buffer> ]g :LspDiagNext<CR>
+      nmap <buffer> K  :LspHover<CR>
+      nmap <buffer> <leader>ca :LspCodeAction<CR>
+      nmap <buffer> <leader>lf :LspFormat<CR>
+  endfunction
+
+
+  augroup lsp_config
     au!
-    autocmd VimEnter * if exists('*LspAddServer') | call LspAddServer(lspServers) | endif
-    autocmd VimEnter * if exists('*LspOptionsSet') | call LspOptionsSet(lspOpts) | endif
+    autocmd User LspSetup call LspOptionsSet(lspOpts)
+    autocmd User LspSetup call LspAddServer(lspServers)
     autocmd User LspAttached call OnLspAttached()
-augroup END
+  augroup END
 "}
 
 
@@ -73,10 +134,10 @@ if filereadable(ProjectDir().'/.vimrc.local')
   exec 'source '.ProjectDir().'/.vimrc.local'
 endif
 
-"let $PATH = MyVimrcDir()."/../tools.libs.scripts/scripts".";".$PATH    " Got env of my scripts
-"if isdirectory("C:/Program Files/Git/usr/bin") | let $PATH = "C:/Program Files/Git/usr/bin".";".$PATH | endif       " for various tool at git home.
-"if isdirectory("C:\\Program Files\\Oracle\\VirtualBox") | let $PATH = "C:\\Program Files\\Oracle\\VirtualBox".";".$PATH | endif
-"let $PATH = $HOME.'\\libin\\ProgramFiles\\llvm\\clang+llvm-20.1.1-x86_64-pc-windows-msvc\\bin;'.$PATH
+"let $PATH = MyVimrcDir()."/../tools.libs.scripts/scripts;".$PATH    " Got env of my scripts
+"if isdirectory("C:/Program Files/Git/usr/bin") | let $PATH = $PATH.";C:/Program Files/Git/usr/bin" | endif       " for various tool at git home.
+"if isdirectory("C:\\Program Files\\Oracle\\VirtualBox") | let $PATH = $PATH.";C:\\Program Files\\Oracle\\VirtualBox" | endif
+"let $PATH = $PATH.';'.$HOME.'\\libin\\ProgramFiles\\llvm\\clang+llvm-20.1.1-x86_64-pc-windows-msvc\\bin'
 "if exists('&pythonthreehome') | let &pythonthreehome=expand("$HOME/.conda/envs/py38") | let $PATH = &pythonthreehome.";".&pythonthreehome."/Scripts;".$PATH | endif
 " http_proxy and https_proxy pointing to px (http://127.0.0.1:3128)
 "let $HTTP_PROXY="http://127.0.0.1:3128"
@@ -143,8 +204,8 @@ vim notes.
 8. Expand wildcards? I want disable it! Do `Grep \%lu  ./`  instead of `Grep %lu  ./`
 9. jump with CTRL-o/CTRL-i
 
-`CTRL-o` jump to an older position, and `CTRL-i` brings you to a newer position. The mnemonic 
-would be O = OUT, I = IN => Ctrl-O brings you out, Ctrl-I brings you in. If every jump likes 
+`CTRL-o` jump to an older position, and `CTRL-i` brings you to a newer position. The mnemonic
+would be O = OUT, I = IN => Ctrl-O brings you out, Ctrl-I brings you in. If every jump likes
 going through a door, that is.
 
 10. spell: Misspellings
@@ -278,7 +339,8 @@ How can I talk with AI via cmdline?
   - [vim9-ollama](https://github.com/greeschenko/vim9-ollama)
   - [vim-ai](https://github.com/madox2/vim-ai)
 
-    command! -nargs=? Say AIChat <args>
+    nnoremap <leader>ai AIChat<space><space>
+    vnoremap <leader>ai AIChat<space><space>
 
     > pip install openai
     >
@@ -309,4 +371,3 @@ How can I talk with AI via cmdline?
  highlighting *_* for the underscore in vim** Refs.:
   - [markdownError](https://stackoverflow.com/questions/19137601/turn-off-highlighting-a-certain-pattern-in-vim)
   - [red block](https://github.com/tpope/vim-markdown/pull/40)
-
