@@ -14,6 +14,17 @@ call plug#end()
 " INITIALIZATION OF PLUGINs
 
 "
+" transparent terminal
+"
+colo industry
+if !has('gui_running')
+  au Colorscheme * hi Normal  guibg=NONE ctermbg=NONE
+        \ | hi LineNr  guibg=NONE ctermbg=NONE
+        \ | hi NonText guibg=NONE ctermbg=NONE
+        \ | hi EndOfBuffer guibg=NONE ctermbg=NONE
+endif
+
+"
 " Settings Plug 'yegappan/lsp'
 "
 "{
@@ -26,11 +37,11 @@ call plug#end()
           \  args: ['--background-index', '--clang-tidy', '--header-insertion=never', '--completion-style=detailed'],
           \  initializationOptions: #{
           \    completion: #{
-          \      detailedLabel: v:true,     " 详细补全标签
-          \      placeholder: v:false       " 不生成占位符文本
+          \      detailedLabel: v:true,
+          \      placeholder: v:false
           \    },
           \    diagnostics: #{
-          \      unusedIncludes: v:true     " 检查未使用的头文件
+          \      unusedIncludes: v:true
           \    }
           \  }
           \}]
@@ -90,9 +101,11 @@ call plug#end()
 
   let lspOpts = #{
       \ autoHighlightDiags: v:true,
-      \ diagVirtualText: v:true,
-      \ diagSigns: v:true,
-      \ diagSignText: #{Error: '✗', Warn: '⚠', Info: 'ℹ', Hint: '➤'}
+      \ showDiagWithSign: v:true,
+      \ diagSignErrorText: '✗',
+      \ diagSignHintText: '➤',
+      \ diagSignInfoText: 'ℹ',
+      \ diagSignWarningText: '⚠'
   \}
 
 
@@ -130,10 +143,6 @@ call plug#end()
 "
 " local envs
 "
-if filereadable(ProjectDir().'/.vimrc.local')
-  exec 'source '.ProjectDir().'/.vimrc.local'
-endif
-
 "let $PATH = MyVimrcDir()."/../tools.libs.scripts/scripts;".$PATH    " Got env of my scripts
 "if isdirectory("C:/Program Files/Git/usr/bin") | let $PATH = $PATH.";C:/Program Files/Git/usr/bin" | endif       " for various tool at git home.
 "if isdirectory("C:\\Program Files\\Oracle\\VirtualBox") | let $PATH = $PATH.";C:\\Program Files\\Oracle\\VirtualBox" | endif
@@ -144,14 +153,10 @@ endif
 "let $HTTPS_PROXY="http://127.0.0.1:3128"
 
 "
-" colo, transparent
-"
-colo industry
-if !has('gui_running')
-  hi Normal  guibg=NONE ctermbg=NONE
-  hi LineNr  guibg=NONE ctermbg=NONE
-  hi NonText guibg=NONE ctermbg=NONE
-  hi EndOfBuffer guibg=NONE ctermbg=NONE
+" local settings
+" e.g., source path/to/tools.libs.scripts/local-settings.vim
+if filereadable(ProjectDir().'/.vimrc.local')
+  exec 'source '.ProjectDir().'/.vimrc.local'
 endif
 
 
@@ -339,8 +344,8 @@ How can I talk with AI via cmdline?
   - [vim9-ollama](https://github.com/greeschenko/vim9-ollama)
   - [vim-ai](https://github.com/madox2/vim-ai)
 
-    nnoremap <leader>ai AIChat<space><space>
-    vnoremap <leader>ai AIChat<space><space>
+    nnoremap <leader>ai :AIChat<space><space>
+    vnoremap <leader>ai :AIChat<space><space>
 
     > pip install openai
     >
